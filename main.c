@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define MAX_INPUT 2048
 #define MAX_ARGS 512
@@ -44,11 +45,17 @@ void commandPrompt(char *input, char *args[], char **inputFile, char **outputFil
               printf("Error: `<` must be between words... \n");
               return;
           }
+          
           token = strtok(NULL, " ");
           if (token == NULL) { 
               printf("Error: Missing filename after `<`... \n");
               return;
           }
+
+          if(access(token, R_OK) == -1) {
+            printf("Error: cannot open %s as an input \n", token);
+          }
+
           *inputFile = token;
       } 
 
@@ -62,7 +69,9 @@ void commandPrompt(char *input, char *args[], char **inputFile, char **outputFil
               printf("Error: Missing filename after `>`... \n");
               return;
           }
+        
           *outputFile = token;
+
       } 
       else if (strcmp(token, "&") == 0) {  // Background execution
           token = strtok(NULL, " ");
@@ -105,6 +114,6 @@ int main() {
   }
 
   return 0; 
-  
+
 }
 

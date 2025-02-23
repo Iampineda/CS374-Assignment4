@@ -8,7 +8,7 @@
 #define MAX_ARGS 512
 
 /**
- * 1: Command Prompt
+ * 1-2: Command Prompt
  */
 void commandPrompt(char *input, char *args[], char **inputFile, char **outputFile, int *background) {
  
@@ -45,7 +45,7 @@ void commandPrompt(char *input, char *args[], char **inputFile, char **outputFil
               printf("Error: `<` must be between words... \n");
               return;
           }
-          
+
           token = strtok(NULL, " ");
           if (token == NULL) { 
               printf("Error: Missing filename after `<`... \n");
@@ -97,6 +97,22 @@ void commandPrompt(char *input, char *args[], char **inputFile, char **outputFil
   args[count] = NULL;  // set null character for strings
 }
 
+
+/**
+ * 3: Commands 
+ */
+int commands(char *args[]) {
+
+  if(args[0] == NULL) {
+    return 0;
+  }
+
+  if(strcmp(args[0], "exit") == 0) {
+    printf("Exiting Shell");
+    exit(0);
+  }
+ 
+}
 
 int main() {
 

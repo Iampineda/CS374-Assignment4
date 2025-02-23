@@ -6,16 +6,26 @@
 
 #define MAX_INPUT 2048
 #define MAX_ARGS 512
+  
 
 /**
  * 1-2: Command Prompt
  */
-void commandPrompt(char *input, char *args[], char **inputFile, char **outputFile, int *background) {
+void commandPrompt(char *input, char *args[], char **inputFile, char **outputFile, int *background, int *argc) {
  
   // Reset variables
   *inputFile = NULL;
   *outputFile = NULL;
   *background = 0;
+  *argc = 0; 
+
+   // Reset input buffer
+   memset(input, 0, sizeof(char) * MAX_INPUT);  
+
+   // Reset arguments array
+   for (int i = 0; i < MAX_ARGS; i++) {
+       args[i] = NULL;
+   }
 
   // Display prompt
   printf(": ");
@@ -34,7 +44,6 @@ void commandPrompt(char *input, char *args[], char **inputFile, char **outputFil
   if (!strlen(input) || input[0] == '#') return;
 
   // Parse arguments
-  int count = 0;
   char *token = strtok(input, " ");
   char *prevToken = NULL; 
 
@@ -82,8 +91,8 @@ void commandPrompt(char *input, char *args[], char **inputFile, char **outputFil
           *background = 1;
       } 
       else {  // Normal argument
-          if (count < MAX_ARGS - 1) {
-              args[count++] = token;
+          if (*argc < MAX_ARGS - 1) {
+              args[(*argc)++] = token;
           } else {
               printf("Error: Too many arguments!!! \n");
               return;  
@@ -94,7 +103,8 @@ void commandPrompt(char *input, char *args[], char **inputFile, char **outputFil
       token = strtok(NULL, " ");
   }
 
-  args[count] = NULL;  // set null character for strings
+  
+  args[*argc] = NULL;  // set null character for strings
 }
 
 
@@ -108,11 +118,22 @@ int commands(char *args[]) {
   }
 
   if(strcmp(args[0], "exit") == 0) {
-    printf("Exiting Shell");
+    printf("Exiting Shell...");
+
+    //KILL PROCESSED HERE
     exit(0);
   }
+
+  else if(strcmp(args[0], "cd") == 0) {
+    if(args[1] == NULL) {
+      printf(" HOME"); 
+    }
+  }
  
+  return 1; 
 }
+
+
 
 int main() {
 
@@ -121,11 +142,16 @@ int main() {
   char* inputFile = NULL;
   char* outputFile = NULL; 
   int background = 0; 
+  int argc = 0;
 
 
   while(1) {
 
-    commandPrompt(input, args, &inputFile, &outputFile, &background);
+    // Handle Inputs 
+    commandPrompt(input, args, &inputFile, &outputFile, &background, &argc);
+
+    // Handle built in commands 
+    if(commands(args)) { continue; }
 
   }
 

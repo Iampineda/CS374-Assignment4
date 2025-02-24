@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -117,6 +116,7 @@ int commands(char *args[]) {
     return 0;
   }
 
+  // EXIT Logic 
   if(strcmp(args[0], "exit") == 0) {
     printf("Exiting Shell...");
 
@@ -124,13 +124,25 @@ int commands(char *args[]) {
     exit(0);
   }
 
+  // CD Logic 
   else if(strcmp(args[0], "cd") == 0) {
-    if(args[1] == NULL) {
-      printf(" HOME"); 
+
+    char* dir = args[1];
+
+    if(dir == NULL) {
+      dir = getenv("Home");  
     }
+
+    if(!chdir(dir)){
+      return 0;
+    } 
+
+    return 1; 
   }
+
+  // STATUS Logic 
  
-  return 1; 
+  return 0; 
 }
 
 

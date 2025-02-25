@@ -4,10 +4,14 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #define MAX_INPUT 2048
 #define MAX_ARGS 512
+#define MAX_BG_PROCS 100
 
+pid_t backgroundPIDS[MAX_BG_PROCS];
+int backgroundCount = 0; 
 int lastExitStatus = 0; 
   
 
@@ -125,7 +129,13 @@ int commands(char *args[]) {
     printf("Exiting Shell... \n");
 
     //KILL PROCESSED HERE
+    for (int i = 0; i < backgroundCount; i++) {
+        kill(backgroundPIDS[i], SIGTERM);  // Send terminate signal
+    }
+
+    backgroundCount = 0; 
     exit(0);
+
   }
 
   // CD Logic 
@@ -133,10 +143,17 @@ int commands(char *args[]) {
 
     char* dir = args[1];
 
+    // Ignore Background execution 
+    if(dir && strcmp(dir, "&") == 0) {
+      dir = NULL;
+    }
+
+    // Defualt to home dir
     if(dir == NULL) {
       dir = getenv("HOME");  
     }
 
+    // attempt changing directory
     if(chdir(dir) == -1){
       perror("cd");
     } 
@@ -145,18 +162,19 @@ int commands(char *args[]) {
   }
 
   // STATUS Logic 
-  else if(strcmp(args[0], "status") == 0) {
-    if(WIFEXITED(lastExitStatus)) {
-      printf("Exit status is: %d \n", WEXITSTATUS(lastExitStatus));
-    }
-    else if(WIFSIGNALED(lastExitStatus)) {
-      printf("Signal Terminated by: %d \n", WTERMSIG(lastExitStatus)); 
-    }
-    return 1; 
+  else if (strcmp(args[0], "status") == 0) {
 
-  
+    if (WIFEXITED(lastExitStatus)) {
+        printf("Exit status: %d \n", WEXITSTATUS(lastExitStatus));
+
+    } else if (WIFSIGNALED(lastExitStatus)) {
+        printf("Terminated by signal: %d \n", WTERMSIG(lastExitStatus));
+    }
+
+    return 1;
   }
   return 0; 
+
 }
 
 
@@ -173,6 +191,8 @@ int main() {
 
   while(1) {
 
+    lastExitStatus = 0; 
+    
     // Handle Inputs 
     commandPrompt(input, args, &inputFile, &outputFile, &background, &argc);
 

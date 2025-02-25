@@ -207,9 +207,9 @@ int main() {
     if(commands(args)) { continue; }
 
   
-    // Current Fail checks
-    printf("%s: command not found\n", args[0]);  
-    fflush(stdout);
+    // // Current Fail checks
+    // printf("%s: command not found\n", args[0]);  
+    // fflush(stdout);
   
 
   }

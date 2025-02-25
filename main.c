@@ -217,9 +217,7 @@ void otherCommands(char *args[], char *inputFile, char *outputFile, int backgrou
           break;
 
       case 0:  // Child process
-
-          sleep(10);
-
+      
           handleInputRedirection(inputFile);
           handleOutputRedirection(outputFile);
 
@@ -240,7 +238,7 @@ void otherCommands(char *args[], char *inputFile, char *outputFile, int backgrou
               backgroundPIDS[backgroundCount++] = spawnPid;
 
           } else {
-            
+
               waitpid(spawnPid, &childStatus, 0);  
               
               // Store exit status

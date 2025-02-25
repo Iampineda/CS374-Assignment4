@@ -252,7 +252,6 @@ void runBackgroundProcess(pid_t spawnPid) {
   fflush(stdout);
 
   backgroundPIDS[backgroundCount++] = spawnPid;
-  lastExitStatus = 0; 
 }
 
 void checkBackgroundProcesses() {

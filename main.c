@@ -122,7 +122,7 @@ int commands(char *args[]) {
 
   // EXIT Logic 
   if(strcmp(args[0], "exit") == 0) {
-    printf("Exiting Shell...");
+    printf("Exiting Shell... \n");
 
     //KILL PROCESSED HERE
     exit(0);

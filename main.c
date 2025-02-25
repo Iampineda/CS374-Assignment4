@@ -248,7 +248,7 @@ void runForegroundProcess(pid_t spawnPid) {
 
 void runBackgroundProcess(pid_t spawnPid) {
   
-  printf("Background PID: %d\n", spawnPid);
+  printf("background pid is %d \n", spawnPid);
   fflush(stdout);
 
   backgroundPIDS[backgroundCount++] = spawnPid;

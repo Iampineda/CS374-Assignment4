@@ -2,9 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #define MAX_INPUT 2048
 #define MAX_ARGS 512
+
+int lastExitStatus = 0; 
   
 
 /**
@@ -130,18 +134,28 @@ int commands(char *args[]) {
     char* dir = args[1];
 
     if(dir == NULL) {
-      dir = getenv("Home");  
+      dir = getenv("HOME");  
     }
 
-    if(!chdir(dir)){
-      return 0;
+    if(chdir(dir) == -1){
+      perror("cd");
     } 
 
     return 1; 
   }
 
   // STATUS Logic 
- 
+  else if(strcmp(args[0], "status") == 0) {
+    if(WIFEXITED(lastExitStatus)) {
+      printf("Exit status is: %d \n", WEXITSTATUS(lastExitStatus));
+    }
+    else if(WIFSIGNALED(lastExitStatus)) {
+      printf("Signal Terminated by: %d \n", WTERMSIG(lastExitStatus)); 
+    }
+    return 1; 
+
+  
+  }
   return 0; 
 }
 

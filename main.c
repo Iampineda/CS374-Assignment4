@@ -148,13 +148,11 @@ int commands(char *args[]) {
   // STATUS Logic 
   else if (strcmp(args[0], "status") == 0) {
 
-    if (WIFEXITED(lastExitStatus)) {
-        printf("Exit status: %d \n", WEXITSTATUS(lastExitStatus));
-
-    } else if (WIFSIGNALED(lastExitStatus)) {
-        printf("Terminated by signal: %d \n", WTERMSIG(lastExitStatus));
-    }
-
+    if (lastExitStatus >= 0) {
+      printf("Exit status: %d \n", lastExitStatus);
+  } else {
+      printf("Terminated by signal: %d \n", -lastExitStatus);
+  }
     fflush(stdout); 
 
     return 1;

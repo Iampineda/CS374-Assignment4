@@ -252,6 +252,7 @@ void runBackgroundProcess(pid_t spawnPid) {
   fflush(stdout);
 
   backgroundPIDS[backgroundCount++] = spawnPid;
+  lastExitStatus = 0; 
 }
 
 
@@ -277,6 +278,7 @@ void otherCommands(char *args[], char *inputFile, char *outputFile, int backgrou
           // Execute command using execvp()
           if (execvp(args[0], args) == -1) {
               perror(args[0]);  
+              lastExitStatus = 1;
               exit(1);  
           }
           break;
@@ -305,8 +307,6 @@ int main() {
   int childStatus; 
 
   while(1) {
-
-    lastExitStatus = 0; 
 
     // Handle Inputs 
     if(commandPrompt(input, args, &inputFile, &outputFile, &background, &argc)) { continue; }

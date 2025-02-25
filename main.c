@@ -318,30 +318,38 @@ int main() {
     // Handle other commands 
     otherCommands(args, inputFile, outputFile, background); 
 
-    // Background managing 
-    for (int i = 0; i < backgroundCount; i++) {
-      pid_t bgPid = waitpid(backgroundPIDS[i], &childStatus, WNOHANG);
-      if (bgPid > 0) { // Process finished
-          printf("Background process %d finished with status %d\n", bgPid, WEXITSTATUS(childStatus));
-          fflush(stdout);
+// Background managing  
+for (int i = 0; i < backgroundCount; i++) {
 
-          // Remove the finished process from the background process list
-          for (int j = i; j < backgroundCount - 1; j++) {
-              backgroundPIDS[j] = backgroundPIDS[j + 1];
-          }
-          backgroundCount--; 
-          i--; 
-      }
-  }
+  pid_t bgPid = waitpid(backgroundPIDS[i], &childStatus, WNOHANG);
   
+  if (bgPid > 0) {  // Process finished
+      if (WIFEXITED(childStatus)) {
+          printf("Background process %d terminated. Exit status: %d\n", bgPid, WEXITSTATUS(childStatus));
+     
+      } else if (WIFSIGNALED(childStatus)) {
+
+          int termSignal = WTERMSIG(childStatus);
+          printf("Background process %d terminated by signal %d\n", bgPid, termSignal);
+      }
+
+      fflush(stdout);
+
+      // Remove the finished process from the background list
+      for (int j = i; j < backgroundCount - 1; j++) {
+          backgroundPIDS[j] = backgroundPIDS[j + 1];
+      }
+      backgroundCount--; 
+      i--;  
+    }
+  }
+
     // Current Fail checks
     printf("%s: command not found\n", args[0]);  
     fflush(stdout);
   
-
   }
 
   return 0; 
-
 }
 

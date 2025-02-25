@@ -183,7 +183,6 @@ int commands(char *args[]) {
  * 4: Execute Other Commands 
  */
 void otherCommands(char *args[]) {
-
   pid_t spawnPid = fork();
   int childStatus;
 
@@ -194,32 +193,22 @@ void otherCommands(char *args[]) {
           break;
 
       case 0:  // Child process
-          printf("Child process started, PID: %d\n", getpid());
-          fflush(stdout);
-
-          sleep(10);  
-
+          // Execute command using execvp() 
           if (execvp(args[0], args) == -1) {
-              perror(args[0]);  
-              exit(1);  
+              perror(args[0]);  // Print error if command fails
+              exit(1);  // Set failure exit code
           }
           break;
 
       default:  // Parent process
-          printf("Parent waiting for child with PID: %d\n", spawnPid);
-          fflush(stdout);
-        
           waitpid(spawnPid, &childStatus, 0);  
 
-          printf("Child process %d terminated\n", spawnPid);
-          fflush(stdout);
-
-          
+          // Store exit status
           if (WIFEXITED(childStatus)) {  
-              lastExitStatus = WEXITSTATUS(childStatus); 
+              lastExitStatus = WEXITSTATUS(childStatus);
           } 
           else if (WIFSIGNALED(childStatus)) {
-              lastExitStatus = WTERMSIG(childStatus);  
+              lastExitStatus = WTERMSIG(childStatus);
           }
           break;
   }
@@ -250,7 +239,8 @@ int main() {
 
     // Handle built in commands 
     if(commands(args)) { continue; }
-    // otherCommands(args); 
+    
+    otherCommands(args); 
 
   
     // Current Fail checks

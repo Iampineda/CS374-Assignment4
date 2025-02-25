@@ -264,9 +264,11 @@ void checkBackgroundProcesses() {
       if (bgPid > 0) {  // Background process has finished
           if (WIFEXITED(childStatus)) {
 
+              lastExitStatus = WEXITSTATUS(childStatus);
               printf("Background process %d terminated. Exit status: %d \n", bgPid, WEXITSTATUS(childStatus));
           } 
           else if (WIFSIGNALED(childStatus)) {
+              lastExitStatus = WTERMSIG(childStatus); 
               printf("Background process %d terminated by signal %d \n", bgPid, WTERMSIG(childStatus));
           }
 

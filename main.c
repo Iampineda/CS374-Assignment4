@@ -248,10 +248,9 @@ void runForegroundProcess(pid_t spawnPid) {
 
 void runBackgroundProcess(pid_t spawnPid) {
   
-  printf("Background PID: %d \n", spawnPid);
+  printf("background pid is %d \n", spawnPid);
   fflush(stdout);
 
-  backgroundPIDS[backgroundCount - 1] = 0;
   backgroundPIDS[backgroundCount++] = spawnPid;
   lastExitStatus = 0; 
 }
@@ -281,6 +280,7 @@ void checkBackgroundProcesses() {
 
           backgroundCount--; 
           i--;  
+
       }
   }
 }
@@ -337,8 +337,6 @@ int main() {
 
   while(1) {
 
-    checkBackgroundProcesses(); 
-    
     // Handle Inputs 
     if(commandPrompt(input, args, &inputFile, &outputFile, &background, &argc)) { continue; }
 
@@ -351,7 +349,6 @@ int main() {
 
     // Background process management
     checkBackgroundProcesses(); 
-
 
     // Current Fail checks
     printf("%s: command not found\n", args[0]);  

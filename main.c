@@ -248,9 +248,10 @@ void runForegroundProcess(pid_t spawnPid) {
 
 void runBackgroundProcess(pid_t spawnPid) {
   
-  printf("background pid is %d \n", spawnPid);
+  printf("Background PID: %d \n", spawnPid);
   fflush(stdout);
 
+  backgroundPIDS[backgroundCount - 1] = 0;
   backgroundPIDS[backgroundCount++] = spawnPid;
   lastExitStatus = 0; 
 }
@@ -336,6 +337,8 @@ int main() {
 
   while(1) {
 
+    checkBackgroundProcesses(); 
+    
     // Handle Inputs 
     if(commandPrompt(input, args, &inputFile, &outputFile, &background, &argc)) { continue; }
 

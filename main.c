@@ -202,6 +202,60 @@ void handleOutputRedirection(char *outputFile) {
 
 
 /**
+ * 6. Executing Commands in Foreground & Background
+ */
+void redirectInputOutput(char *inputFile, char *outputFile, int background) {
+
+  // 🔹 Handle input redirection
+  if (inputFile) {
+      handleInputRedirection(inputFile);
+
+  } else if (background) {  
+
+      // Redirect background input to /dev/null
+      int devNull = open("/dev/null", O_RDONLY);
+      dup2(devNull, STDIN_FILENO);
+      close(devNull);
+  }
+
+  // 🔹 Handle output redirection
+  if (outputFile) {
+      handleOutputRedirection(outputFile);
+
+  } else if (background) {  
+
+      // Redirect background output to /dev/null
+      int devNull = open("/dev/null", O_WRONLY);
+      dup2(devNull, STDOUT_FILENO);
+      dup2(devNull, STDERR_FILENO);
+      close(devNull);
+  }
+}
+
+void runForegroundProcess(pid_t spawnPid) {
+
+  int childStatus;
+  waitpid(spawnPid, &childStatus, 0);
+
+  // Store exit status of foreground process
+  if (WIFEXITED(childStatus)) {  
+      lastExitStatus = WEXITSTATUS(childStatus);
+
+  } else if (WIFSIGNALED(childStatus)) {
+      lastExitStatus = WTERMSIG(childStatus);
+  }
+}
+
+void runBackgroundProcess(pid_t spawnPid) {
+  
+  printf("Background PID: %d\n", spawnPid);
+  fflush(stdout);
+
+  backgroundPIDS[backgroundCount++] = spawnPid;
+}
+
+
+/**
  * 4: Execute Other Commands with Input/Output Redirection 
  */
 void otherCommands(char *args[], char *inputFile, char *outputFile, int background) {
@@ -217,9 +271,8 @@ void otherCommands(char *args[], char *inputFile, char *outputFile, int backgrou
           break;
 
       case 0:  // Child process
-      
-          handleInputRedirection(inputFile);
-          handleOutputRedirection(outputFile);
+
+      redirectInputOutput(inputFile, outputFile, background);
 
           // Execute command using execvp()
           if (execvp(args[0], args) == -1) {
@@ -230,29 +283,15 @@ void otherCommands(char *args[], char *inputFile, char *outputFile, int backgrou
 
       default:  // Parent process
 
-          if (background) {  // If background process
-              printf("Background PID: %d\n", spawnPid);
-              fflush(stdout);
+        if (background) {  
+          runBackgroundProcess(spawnPid);
+        } else {  
+          runForegroundProcess(spawnPid);
+        }
 
-              // Store background process ID
-              backgroundPIDS[backgroundCount++] = spawnPid;
-
-          } else {
-
-              waitpid(spawnPid, &childStatus, 0);  
-              
-              // Store exit status
-              if (WIFEXITED(childStatus)) {  
-                  lastExitStatus = WEXITSTATUS(childStatus);
-              } else if (WIFSIGNALED(childStatus)) {
-                  lastExitStatus = WTERMSIG(childStatus);
-              }
-          }
-
-          break;
+      break;
   }
 }
-
 
 
 int main() {

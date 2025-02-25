@@ -156,14 +156,14 @@ int commands(char *args[]) {
     // attempt changing directory
     if(chdir(dir) == -1){
       perror("cd");
-    } 
-
-    else {
+    } else {
       char cwd[1024];
       getcwd(cwd, sizeof(cwd));
       printf("Current directory: %s\n", cwd);  // Print new directory
       fflush(stdout);
-    }
+  }
+
+
 
     return 1; 
   }

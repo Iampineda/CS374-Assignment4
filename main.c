@@ -179,40 +179,81 @@ int commands(char *args[]) {
 }
 
 
+
+
 /**
- * 4: Execute Other Commands 
+ * 5: Input & Output Redirection
  */
-void otherCommands(char *args[]) {
-  pid_t spawnPid = fork();
-  int childStatus;
-
-  switch (spawnPid) {
-      case -1:  // Fork failed
-          perror("fork() failed!");
+/**
+ * Handles input redirection (stdin) before executing a command.
+ */
+void handleInputRedirection(char *inputFile) {
+  if (inputFile) {
+      FILE *file = fopen(inputFile, "r");  // Open file in read mode
+      if (!file) {
+          fprintf(stderr, "Error: cannot open %s for input\n", inputFile);
+          fflush(stderr);
           exit(1);
-          break;
-
-      case 0:  // Child process
-          // Execute command using execvp() 
-          if (execvp(args[0], args) == -1) {
-              perror(args[0]);  // Print error if command fails
-              exit(1);  // Set failure exit code
-          }
-          break;
-
-      default:  // Parent process
-          waitpid(spawnPid, &childStatus, 0);  
-
-          // Store exit status
-          if (WIFEXITED(childStatus)) {  
-              lastExitStatus = WEXITSTATUS(childStatus);
-          } 
-          else if (WIFSIGNALED(childStatus)) {
-              lastExitStatus = WTERMSIG(childStatus);
-          }
-          break;
+      }
+      dup2(fileno(file), STDIN_FILENO);
+      fclose(file);
   }
 }
+
+/**
+* Handles output redirection (stdout) before executing a command.
+*/
+void handleOutputRedirection(char *outputFile) {
+  if (outputFile) {
+      FILE *file = fopen(outputFile, "w");  // Open file in write mode (overwrite)
+      if (!file) {
+          fprintf(stderr, "Error: cannot open %s for output\n", outputFile);
+          fflush(stderr);
+          exit(1);
+      }
+      dup2(fileno(file), STDOUT_FILENO);
+      fclose(file);
+  }
+}
+
+/**
+ * 4: Execute Other Commands with Input/Output Redirection 
+ */
+void otherCommands(char *args[], char *inputFile, char *outputFile) {
+    pid_t spawnPid = fork();
+    int childStatus;
+
+    switch (spawnPid) {
+        case -1:  // Fork failed
+            perror("fork() failed!");
+            exit(1);
+            break;
+
+        case 0:  // Child process
+            handleInputRedirection(inputFile);
+            handleOutputRedirection(outputFile);
+
+            // Execute command using execvp()
+            if (execvp(args[0], args) == -1) {
+                perror(args[0]);  // Print error if command fails
+                exit(1);  // Set failure exit code
+            }
+            break;
+
+        default:  // Parent process
+            waitpid(spawnPid, &childStatus, 0);  
+
+            // Store exit status
+            if (WIFEXITED(childStatus)) {  
+                lastExitStatus = WEXITSTATUS(childStatus);
+            } 
+            else if (WIFSIGNALED(childStatus)) {
+                lastExitStatus = WTERMSIG(childStatus);
+            }
+            break;
+    }
+}
+
 
 
 int main() {
@@ -239,8 +280,8 @@ int main() {
 
     // Handle built in commands 
     if(commands(args)) { continue; }
-    
-    otherCommands(args); 
+
+    otherCommands(args, inputFile, outputFile); 
 
   
     // Current Fail checks

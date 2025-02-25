@@ -250,7 +250,7 @@ int main() {
 
     // Handle built in commands 
     if(commands(args)) { continue; }
-    otherCommands(args); 
+    // otherCommands(args); 
 
   
     // Current Fail checks

@@ -169,6 +169,7 @@ int commands(char *args[]) {
  * 5: Input & Output Redirection
  */
 void handleInputRedirection(char *inputFile) {
+
   if (inputFile) {
 
       int inpFD = open(inputFile, O_RDONLY);  // Open file in read mode
@@ -216,6 +217,9 @@ void otherCommands(char *args[], char *inputFile, char *outputFile, int backgrou
           break;
 
       case 0:  // Child process
+
+          sleep(10);
+
           handleInputRedirection(inputFile);
           handleOutputRedirection(outputFile);
 
@@ -234,7 +238,9 @@ void otherCommands(char *args[], char *inputFile, char *outputFile, int backgrou
 
               // Store background process ID
               backgroundPIDS[backgroundCount++] = spawnPid;
+
           } else {
+            
               waitpid(spawnPid, &childStatus, 0);  
               
               // Store exit status

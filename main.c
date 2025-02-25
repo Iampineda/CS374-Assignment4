@@ -113,7 +113,7 @@ int commands(char *args[]) {
 
     //KILL PROCESSED HERE
     for (int i = 0; i < backgroundCount; i++) {
-        kill(backgroundPIDS[i], SIGTERM);  // Send terminate signal
+        kill(backgroundPIDS[i], SIGTERM);  
     }
 
     backgroundCount = 0; 
@@ -154,6 +154,8 @@ int commands(char *args[]) {
         printf("Terminated by signal: %d \n", WTERMSIG(lastExitStatus));
     }
 
+    fflush(stdout); 
+    
     return 1;
   }
 

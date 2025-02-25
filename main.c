@@ -187,7 +187,7 @@ void handleOutputRedirection(char *outputFile) {
 
   if (outputFile) {
 
-      int outFD = open(outputFile, O_RDONLY | O_CREAT, O_TRUNC, 0644);  // Open file in write mode
+      int outFD = open(outputFile, O_WRONLY | O_CREAT, O_TRUNC, 0644);  // Open file in write mode
       if (outFD == -1) {
           fprintf(stderr, "Error: cannot open %s for output file \n", outputFile);
           fflush(stderr);

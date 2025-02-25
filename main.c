@@ -265,7 +265,7 @@ int main() {
   char* outputFile = NULL; 
   int background = 0; 
   int argc = 0;
-
+  int childStatus; 
 
   while(1) {
 
@@ -284,6 +284,20 @@ int main() {
 
     otherCommands(args, inputFile, outputFile, background); 
 
+    for (int i = 0; i < backgroundCount; i++) {
+      pid_t bgPid = waitpid(backgroundPIDS[i], &childStatus, WNOHANG);
+      if (bgPid > 0) { // Process finished
+          printf("Background process %d finished with status %d\n", bgPid, WEXITSTATUS(childStatus));
+          fflush(stdout);
+
+          // Remove the finished process from the background process list
+          for (int j = i; j < backgroundCount - 1; j++) {
+              backgroundPIDS[j] = backgroundPIDS[j + 1];
+          }
+          backgroundCount--; 
+          i--; 
+      }
+  }
   
     // Current Fail checks
     printf("%s: command not found\n", args[0]);  

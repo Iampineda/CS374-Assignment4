@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #define MAX_INPUT 2048
 #define MAX_ARGS 512
@@ -155,7 +156,7 @@ int commands(char *args[]) {
     }
 
     fflush(stdout); 
-    
+
     return 1;
   }
 
@@ -169,27 +170,32 @@ int commands(char *args[]) {
  */
 void handleInputRedirection(char *inputFile) {
   if (inputFile) {
-      FILE *file = fopen(inputFile, "r");  // Open file in read mode
-      if (!file) {
-          fprintf(stderr, "Error: cannot open %s for input\n", inputFile);
+
+      int inpFD = open(inputFile, O_RDONLY);  // Open file in read mode
+      if (inpFD == -1) {
+          fprintf(stderr, "Error: cannot open %s for input file\n", inputFile);
           fflush(stderr);
           exit(1);
       }
-      dup2(fileno(file), STDIN_FILENO);
-      fclose(file);
+
+      dup2(inpFD, STDIN_FILENO);
+      close(inpFD);
   }
 }
 
 void handleOutputRedirection(char *outputFile) {
+
   if (outputFile) {
-      FILE *file = fopen(outputFile, "w");  // Open file in write mode
-      if (!file) {
-          fprintf(stderr, "Error: cannot open %s for output\n", outputFile);
+
+      int outFD = open(outputFile, O_RDONLY);  // Open file in write mode
+      if (outFD == -1) {
+          fprintf(stderr, "Error: cannot open %s for output file \n", outputFile);
           fflush(stderr);
           exit(1);
       }
-      dup2(fileno(file), STDOUT_FILENO);
-      fclose(file);
+
+      dup2(outFD, STDOUT_FILENO);
+      close(outFD);
   }
 }
 
@@ -203,6 +209,7 @@ void otherCommands(char *args[], char *inputFile, char *outputFile, int backgrou
   int childStatus;
 
   switch (spawnPid) {
+
       case -1:  // Fork failed
           perror("fork() failed!");
           exit(1);
@@ -215,11 +222,12 @@ void otherCommands(char *args[], char *inputFile, char *outputFile, int backgrou
           // Execute command using execvp()
           if (execvp(args[0], args) == -1) {
               perror(args[0]);  
-              exit(1);  // Set failure exit code
+              exit(1);  
           }
           break;
 
       default:  // Parent process
+
           if (background) {  // If background process
               printf("Background PID: %d\n", spawnPid);
               fflush(stdout);
@@ -236,6 +244,7 @@ void otherCommands(char *args[], char *inputFile, char *outputFile, int backgrou
                   lastExitStatus = WTERMSIG(childStatus);
               }
           }
+
           break;
   }
 }

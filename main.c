@@ -18,7 +18,7 @@ int lastExitStatus = 0;
 /**
  * 1-2: Command Prompt
  */
-void commandPrompt(char *input, char *args[], char **inputFile, char **outputFile, int *background, int *argc) {
+int commandPrompt(char *input, char *args[], char **inputFile, char **outputFile, int *background, int *argc) {
  
   // Reset variables
   *inputFile = NULL;
@@ -26,13 +26,13 @@ void commandPrompt(char *input, char *args[], char **inputFile, char **outputFil
   *background = 0;
   *argc = 0; 
 
-   // Reset input buffer
-   memset(input, 0, sizeof(char) * MAX_INPUT);  
+  // Reset input buffer
+  memset(input, 0, sizeof(char) * MAX_INPUT);  
 
-   // Reset arguments array
-   for (int i = 0; i < MAX_ARGS; i++) {
-       args[i] = NULL;
-   }
+  // Reset arguments array
+  for (int i = 0; i < MAX_ARGS; i++) {
+      args[i] = NULL;
+  }
 
   // Display prompt
   printf(": ");
@@ -40,60 +40,44 @@ void commandPrompt(char *input, char *args[], char **inputFile, char **outputFil
 
   // Read input
   if (fgets(input, MAX_INPUT, stdin) == NULL) {
-      printf("Exiting");
+      printf("Exiting\n");
       exit(0);  
   }
 
-  // handle fgets new line character 
+  // Handle fgets new line character 
   input[strcspn(input, "\n")] = '\0';
 
-  // Ignore blank lines and #
-  if (!strlen(input) || input[0] == '#') return;
+  // Ignore blank lines and comments (#)
+  if (!strlen(input) || input[0] == '#') {
+      return 1; 
+  }
 
   // Parse arguments
   char *token = strtok(input, " ");
   char *prevToken = NULL; 
 
   while (token != NULL) {
-
       if (strcmp(token, "<") == 0) {  // Input redirection
-          if (prevToken == NULL) { 
-              printf("Error: `<` must be between words... \n");
-              return;
-          }
-
           token = strtok(NULL, " ");
           if (token == NULL) { 
-              printf("Error: Missing filename after `<`... \n");
-              return;
+              printf("Error: Missing filename after `<`.\n");
+              return 1; 
           }
-
-          if(access(token, R_OK) == -1) {
-            printf("Error: cannot open %s as an input \n", token);
-          }
-
           *inputFile = token;
       } 
-
       else if (strcmp(token, ">") == 0) {  // Output redirection
-          if (prevToken == NULL) { 
-              printf("Error: `>` must be between words... \n");
-              return;
-          }
           token = strtok(NULL, " ");
           if (token == NULL) {
-              printf("Error: Missing filename after `>`... \n");
-              return;
+              printf("Error: Missing filename after `>`.\n");
+              return 1;
           }
-        
           *outputFile = token;
-
       } 
       else if (strcmp(token, "&") == 0) {  // Background execution
           token = strtok(NULL, " ");
           if (token != NULL) { 
               printf("Error: `&` must be the last word in the command.\n");
-              return;
+              return 1;
           }
           *background = 1;
       } 
@@ -101,17 +85,16 @@ void commandPrompt(char *input, char *args[], char **inputFile, char **outputFil
           if (*argc < MAX_ARGS - 1) {
               args[(*argc)++] = token;
           } else {
-              printf("Error: Too many arguments!!! \n");
-              return;  
+              printf("Error: Too many arguments!\n");
+              return 1;  
           }
       }
-
       prevToken = token;
       token = strtok(NULL, " ");
   }
 
-  
-  args[*argc] = NULL;  // set null character for strings
+  args[*argc] = NULL;  // Null-terminate argument list
+  return 0;  // Successfully parsed command
 }
 
 
@@ -272,18 +255,16 @@ int main() {
     lastExitStatus = 0; 
 
     // Handle Inputs 
-    commandPrompt(input, args, &inputFile, &outputFile, &background, &argc);
-
-    // Skip if input was blank or a comment
-    if (args[0] == NULL) { 
-      continue;  
-    }
+    if(commandPrompt(input, args, &inputFile, &outputFile, &background, &argc)) { continue; }
 
     // Handle built in commands 
     if(commands(args)) { continue; }
 
+
+    // Handle other commands 
     otherCommands(args, inputFile, outputFile, background); 
 
+    // Background managing 
     for (int i = 0; i < backgroundCount; i++) {
       pid_t bgPid = waitpid(backgroundPIDS[i], &childStatus, WNOHANG);
       if (bgPid > 0) { // Process finished

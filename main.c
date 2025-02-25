@@ -240,37 +240,35 @@ void runForegroundProcess(pid_t spawnPid) {
   // Store exit status of foreground process
   if (WIFEXITED(childStatus)) {  
       lastExitStatus = WEXITSTATUS(childStatus);
-      printf("Foreground process %d exited with status %d\n", spawnPid, lastExitStatus);
-  } 
-  else if (WIFSIGNALED(childStatus)) {  
-      int termSignal = WTERMSIG(childStatus);
-      printf("Foreground process %d terminated by signal %d\n", spawnPid, termSignal);
-      lastExitStatus = termSignal;  
+
+  } else if (WIFSIGNALED(childStatus)) {
+      lastExitStatus = WTERMSIG(childStatus);
   }
-  
-  fflush(stdout);
 }
 
 void runBackgroundProcess(pid_t spawnPid) {
-
-  printf("Background PID %d started\n", spawnPid);
+  
+  printf("background pid is %d \n", spawnPid);
   fflush(stdout);
 
   backgroundPIDS[backgroundCount++] = spawnPid;
+  lastExitStatus = 0; 
 }
 
 void checkBackgroundProcesses() {
+
   int childStatus;
   for (int i = 0; i < backgroundCount; i++) {
 
       pid_t bgPid = waitpid(backgroundPIDS[i], &childStatus, WNOHANG);
-
-      if (bgPid > 0) {  // A background process has finished
+      
+      if (bgPid > 0) {  // Background process has finished
           if (WIFEXITED(childStatus)) {
-              printf("Background process %d is done. Exit status: %d\n", bgPid, WEXITSTATUS(childStatus));
+
+              printf("Background process %d terminated. Exit status: %d \n", bgPid, WEXITSTATUS(childStatus));
           } 
           else if (WIFSIGNALED(childStatus)) {
-              printf("Background process %d terminated by signal %d\n", bgPid, WTERMSIG(childStatus));
+              printf("Background process %d terminated by signal %d \n", bgPid, WTERMSIG(childStatus));
           }
 
           fflush(stdout);
@@ -279,12 +277,13 @@ void checkBackgroundProcesses() {
           for (int j = i; j < backgroundCount - 1; j++) {
               backgroundPIDS[j] = backgroundPIDS[j + 1];
           }
+
           backgroundCount--; 
           i--;  
+
       }
   }
 }
-
 
 /**
  * 4: Execute Other Commands with Input/Output Redirection 
@@ -349,7 +348,7 @@ int main() {
     otherCommands(args, inputFile, outputFile, background); 
 
     // Background process management
-    checkBackgroundProcesses(); 
+    checkBackgroundProcesses();
 
     // Current Fail checks
     printf("%s: command not found\n", args[0]);  

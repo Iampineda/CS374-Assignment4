@@ -336,6 +336,9 @@ int main() {
 
   while(1) {
 
+    // Background process management
+    checkBackgroundProcesses();
+
     // Handle Inputs 
     if(commandPrompt(input, args, &inputFile, &outputFile, &background, &argc)) { continue; }
 
@@ -346,8 +349,6 @@ int main() {
     // Handle other commands 
     otherCommands(args, inputFile, outputFile, background); 
 
-    // Background process management
-    checkBackgroundProcesses();
 
     // Current Fail checks
     printf("%s: command not found\n", args[0]);  

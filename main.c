@@ -116,7 +116,7 @@ void commandPrompt(char *input, char *args[], char **inputFile, char **outputFil
 
 
 /**
- * 3: Commands 
+ * 3:  Built in Commands 
  */
 int commands(char *args[]) {
 
@@ -156,14 +156,7 @@ int commands(char *args[]) {
     // attempt changing directory
     if(chdir(dir) == -1){
       perror("cd");
-    } else {
-      char cwd[1024];
-      getcwd(cwd, sizeof(cwd));
-      printf("Current directory: %s\n", cwd);  // Print new directory
-      fflush(stdout);
-  }
-
-
+    } 
 
     return 1; 
   }
@@ -180,10 +173,40 @@ int commands(char *args[]) {
 
     return 1;
   }
+
   return 0; 
 
 }
 
+
+/**
+ * 4: Execute Other Commands 
+ */
+ void otherCommands(char *args[], int background) {
+  pid_t spawnPid = fork();  // Fork a child process
+
+  if (spawnPid == -1) {
+      perror("fork");
+      exit(1);  
+  }
+  else if (spawnPid == 0) {  // Child process
+      // Execute the command using execvp
+      if (execvp(args[0], args) == -1) {
+          perror(args[0]); 
+          exit(1);  
+      }
+  }
+  else {  // Parent process
+      if (background) {  
+          printf("Background PID: %d\n", spawnPid);
+          fflush(stdout);
+      }
+      else {  
+          int childStatus;
+          waitpid(spawnPid, &childStatus, 0);  // Wait for foreground process
+      }
+  }
+}
 
 
 int main() {

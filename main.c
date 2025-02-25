@@ -182,29 +182,46 @@ int commands(char *args[]) {
 /**
  * 4: Execute Other Commands 
  */
- void otherCommands(char *args[], int background) {
-  pid_t spawnPid = fork();  // Fork a child process
+void otherCommands(char *args[]) {
 
-  if (spawnPid == -1) {
-      perror("fork");
-      exit(1);  
-  }
-  else if (spawnPid == 0) {  // Child process
-      // Execute the command using execvp
-      if (execvp(args[0], args) == -1) {
-          perror(args[0]); 
-          exit(1);  
-      }
-  }
-  else {  // Parent process
-      if (background) {  
-          printf("Background PID: %d\n", spawnPid);
+  pid_t spawnPid = fork();
+  int childStatus;
+
+  switch (spawnPid) {
+      case -1:  // Fork failed
+          perror("fork() failed!");
+          exit(1);
+          break;
+
+      case 0:  // Child process
+          printf("Child process started, PID: %d\n", getpid());
           fflush(stdout);
-      }
-      else {  
-          int childStatus;
-          waitpid(spawnPid, &childStatus, 0);  // Wait for foreground process
-      }
+
+          sleep(10);  
+
+          if (execvp(args[0], args) == -1) {
+              perror(args[0]);  
+              exit(1);  
+          }
+          break;
+
+      default:  // Parent process
+          printf("Parent waiting for child with PID: %d\n", spawnPid);
+          fflush(stdout);
+        
+          waitpid(spawnPid, &childStatus, 0);  
+
+          printf("Child process %d terminated\n", spawnPid);
+          fflush(stdout);
+
+          
+          if (WIFEXITED(childStatus)) {  
+              lastExitStatus = WEXITSTATUS(childStatus); 
+          } 
+          else if (WIFSIGNALED(childStatus)) {
+              lastExitStatus = WTERMSIG(childStatus);  
+          }
+          break;
   }
 }
 
@@ -233,6 +250,7 @@ int main() {
 
     // Handle built in commands 
     if(commands(args)) { continue; }
+    otherCommands(args); 
 
   
     // Current Fail checks

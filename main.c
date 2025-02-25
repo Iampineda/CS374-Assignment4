@@ -255,6 +255,34 @@ void runBackgroundProcess(pid_t spawnPid) {
   lastExitStatus = 0; 
 }
 
+void checkBackgroundProcesses() {
+
+  int childStatus;
+  for (int i = 0; i < backgroundCount; i++) {
+
+      pid_t bgPid = waitpid(backgroundPIDS[i], &childStatus, WNOHANG);
+      
+      if (bgPid > 0) {  // Background process has finished
+          if (WIFEXITED(childStatus)) {
+
+              printf("Background process %d terminated. Exit status: %d \n", bgPid, WEXITSTATUS(childStatus));
+          } 
+          else if (WIFSIGNALED(childStatus)) {
+              printf("Background process %d terminated by signal %d \n", bgPid, WTERMSIG(childStatus));
+          }
+
+          fflush(stdout);
+
+          // Remove the finished process from the list
+          for (int j = i; j < backgroundCount - 1; j++) {
+              backgroundPIDS[j] = backgroundPIDS[j + 1];
+          }
+
+          backgroundCount--; 
+          i--;  
+      }
+  }
+}
 
 /**
  * 4: Execute Other Commands with Input/Output Redirection 
@@ -319,31 +347,7 @@ int main() {
     otherCommands(args, inputFile, outputFile, background); 
 
     // Background process management
-    for (int i = 0; i < backgroundCount; i++) {
-
-      int childStatus;
-      pid_t bgPid = waitpid(backgroundPIDS[i], &childStatus, WNOHANG);
-
-      if (bgPid > 0) {  // A background process has finished
-
-          if (WIFEXITED(childStatus)) {
-              printf("Background process %d terminated. Exit status: %d\n", bgPid, WEXITSTATUS(childStatus));
-          } 
-          else if (WIFSIGNALED(childStatus)) {
-              printf("Background process %d terminated by signal %d\n", bgPid, WTERMSIG(childStatus));
-          }
-
-          fflush(stdout);
-
-          // Remove the finished process from the background process list
-          for (int j = i; j < backgroundCount - 1; j++) {
-              backgroundPIDS[j] = backgroundPIDS[j + 1];
-          }
-
-          backgroundCount--; 
-          i--;  
-      }
-    }
+    checkBackgroundProcesses(); 
 
 
     // Current Fail checks

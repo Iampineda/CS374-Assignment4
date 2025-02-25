@@ -157,6 +157,13 @@ int commands(char *args[]) {
     if(chdir(dir) == -1){
       perror("cd");
     } 
+    
+    else {
+      char cwd[1024];
+      getcwd(cwd, sizeof(cwd));
+      printf("Current directory: %s\n", cwd);  // Print new directory
+      fflush(stdout);
+    }
 
     return 1; 
   }
@@ -192,12 +199,18 @@ int main() {
   while(1) {
 
     lastExitStatus = 0; 
-    
+
     // Handle Inputs 
     commandPrompt(input, args, &inputFile, &outputFile, &background, &argc);
 
     // Handle built in commands 
     if(commands(args)) { continue; }
+
+  
+    // Current Fail checks
+    printf("%s: command not found\n", args[0]);  
+    fflush(stdout);
+  
 
   }
 

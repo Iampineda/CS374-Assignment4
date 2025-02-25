@@ -203,13 +203,18 @@ int main() {
     // Handle Inputs 
     commandPrompt(input, args, &inputFile, &outputFile, &background, &argc);
 
+    // Skip if input was blank or a comment
+    if (args[0] == NULL) { 
+      continue;  
+    }
+
     // Handle built in commands 
     if(commands(args)) { continue; }
 
   
-    // // Current Fail checks
-    // printf("%s: command not found\n", args[0]);  
-    // fflush(stdout);
+    // Current Fail checks
+    printf("%s: command not found\n", args[0]);  
+    fflush(stdout);
   
 
   }

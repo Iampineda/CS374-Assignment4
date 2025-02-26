@@ -471,6 +471,9 @@ int main()
     // Handle built in commands
     if (commands(args)) { continue; }
 
+    // Background process management
+    checkBackgroundProcesses();
+    
     // Handle other commands
     if (otherCommands(args, inputFile, outputFile, background)) { continue; }
   }

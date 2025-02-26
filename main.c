@@ -127,7 +127,6 @@ int commands(char *args[])
     return 0;
   }
 
-
   int i = 0; 
   while(args[i] != NULL) 
   {
@@ -192,12 +191,8 @@ int commands(char *args[])
     {
       printf("Terminated by signal: %d \n", WTERMSIG(lastExitStatus));
     }
-    else
-    {
-      printf("Exit status: 0 \n");
-    }
-    
 
+    
     fflush(stdout);
 
     return 1;
@@ -298,9 +293,8 @@ void runForegroundProcess(pid_t spawnPid)
   }
   else if (WIFSIGNALED(childStatus))
   {
-    int termSignal = WTERMSIG(childStatus);
-    lastExitStatus = 128 + termSignal;
-    printf("Terminated by signal %d\n", termSignal);
+    lastExitStatus = WTERMSIG(childStatus);
+    printf("Terminated by signal %d /n ", lastExitStatus);
     fflush(stdout);
   }
 }
@@ -383,59 +377,64 @@ void handle_SIGTSTP(int signo)
 
 
 /**
- * 4: Execute Other Commands with Input/Output Redirection
+ * 4: Execute Other Commands 
  */
-int otherCommands(char *args[], char *inputFile, char *outputFile, int background)
-{
-
-  pid_t spawnPid = fork();
-  int childStatus;
-
-  switch (spawnPid)
-  {
-
-  case -1: // Fork failed
-    perror("fork() failed!");
-    return 0; // Return 0 for failure
-
-  case 0: // Child process
-    signal(SIGINT, SIG_DFL);
-    redirectInputOutput(inputFile, outputFile, background);
-
-    // Execute command using execvp()
-    if (execvp(args[0], args) == -1)
-    {
-      perror(args[0]);
-      lastExitStatus = 1;
-      exit(1); // Exit child process if execvp fails
-    }
-    break;
-
-  default: // Parent process
-    signal(SIGINT, SIG_IGN);
-    if (background)
-    {
-      runBackgroundProcess(spawnPid);
-      return 1; // Background processes are assumed to start successfully
-    }
-    else
-    {
-      runForegroundProcess(spawnPid);
-
-      // Check if foreground process exited successfully
-      if (WIFEXITED(lastExitStatus) && WEXITSTATUS(lastExitStatus) == 0)
-      {
-        return 1; // Return 1 if the command executed successfully
-      }
-      else
-      {
-        return 0; // Return 0 if the command failed
-      }
-    }
-  }
-
-  return 0; // Default return if execution fails
-}
+ int otherCommands(char *args[], char *inputFile, char *outputFile, int background)
+ {
+     pid_t spawnPid = fork();
+     int childStatus;  // Store status of child process
+ 
+     switch (spawnPid)
+     {
+     case -1: // Fork failed
+         perror("fork() failed!");
+         return 0; // Return 0 for failure
+ 
+     case 0: // Child process
+         signal(SIGINT, SIG_DFL);
+         redirectInputOutput(inputFile, outputFile, background);
+ 
+         // Execute command using execvp()
+         if (execvp(args[0], args) == -1)
+         {
+             perror(args[0]); 
+             exit(1); // Exit child process if execvp fails
+         }
+         break;
+ 
+     default: // Parent process
+         signal(SIGINT, SIG_IGN);
+ 
+         if (background)
+         {
+             runBackgroundProcess(spawnPid);
+             return 1; // Background processes assumed to start successfully
+         }
+         else
+         {
+             waitpid(spawnPid, &childStatus, 0); // Wait for foreground process
+ 
+             if (WIFEXITED(childStatus))
+             {
+                 lastExitStatus = WEXITSTATUS(childStatus);
+             }
+             else if (WIFSIGNALED(childStatus))
+             {
+                 lastExitStatus = WTERMSIG(childStatus);
+             }
+             else
+             {
+                 lastExitStatus = 1; // Generic error if neither condition is met
+             }
+ 
+             return (lastExitStatus == 0) ? 1 : 0;
+         }
+     }
+ 
+     return 0; // Default return if execution fails
+ }
+ 
+ 
 
 int main()
 {

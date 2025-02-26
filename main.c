@@ -194,74 +194,43 @@ int commands(char *args[])
 /**
  * 5: Input & Output Redirection
  */
-void handleInputRedirection(char *inputFile)
-{
-
-  if (inputFile)
-  {
-
-    int inpFD = open(inputFile, O_RDONLY); // Open file in read mode
-    if (inpFD == -1)
-    {
-      fprintf(stderr, "Error: cannot open %s for input file\n", inputFile);
-      fflush(stderr);
-      lastExitStatus = 1; 
-      return; 
-    }
-
-    dup2(inpFD, STDIN_FILENO);
-    close(inpFD);
-  }
-}
-
-void handleOutputRedirection(char *outputFile)
-{
-
-  if (outputFile)
-  {
-
-    int outFD = open(outputFile, O_WRONLY | O_CREAT, O_TRUNC, 0644); // Open file in write mode
-    if (outFD == -1)
-    {
-      fprintf(stderr, "Error: cannot open %s for output file \n", outputFile);
-      fflush(stderr);
-      lastExitStatus = 1; 
-      return; 
-    }
-
-    dup2(outFD, STDOUT_FILENO);
-    dup2(outFD, STDERR_FILENO);
-    close(outFD);
-  }
-}
-
-
-/**
- * 7: Signals SIGINT & SIGTSTP
- */
- void handle_SIGINT(int signo)
+ void handleInputRedirection(char *inputFile)
  {
-   char *message = "Caught SIGINT, sleeping for 10 seconds\n";
-   write(STDOUT_FILENO, message, 34);
+   if (inputFile)
+   {
+     int inpFD = open(inputFile, O_RDONLY); // Open file in read mode
+     if (inpFD == -1)
+     {
+       fprintf(stderr, "Error: cannot open %s for input file\n", inputFile);
+       fflush(stderr);
+       lastExitStatus = 1; 
+       return; 
+     }
+ 
+     dup2(inpFD, STDIN_FILENO);
+     close(inpFD);
+   }
  }
  
- void handle_SIGTSTP(int signo)
+ void handleOutputRedirection(char *outputFile)
  {
-   if (foregroundOnlyMode == 0)
+   if (outputFile)
    {
-     char *message = "Entering foreground-only mode\n";
-     write(STDOUT_FILENO, message, 30);
-     foregroundOnlyMode = 1;
-   }
-   else
-   {
-     char *message = "Exiting foreground-only mode\n";
-     write(STDOUT_FILENO, message, 29);
-     foregroundOnlyMode = 0;
-   }
+     int outFD = open(outputFile, O_WRONLY | O_CREAT | O_TRUNC, 0644); // Open file in write mode
+     if (outFD == -1)
+     {
+       fprintf(stderr, "Error: cannot open %s for output file \n", outputFile);
+       fflush(stderr);
+       lastExitStatus = 1; 
+       return; 
+     }
  
-   fflush(stdout);
+     dup2(outFD, STDOUT_FILENO);
+     dup2(outFD, STDERR_FILENO);
+     close(outFD);
+   }
  }
+ 
 
 /**
  * 6. Executing Commands in Foreground & Background
@@ -329,6 +298,7 @@ void runBackgroundProcess(pid_t spawnPid)
 
 void checkBackgroundProcesses()
 {
+
   int childStatus;
   int newCount = 0;
 
@@ -366,7 +336,32 @@ void checkBackgroundProcesses()
 }
 
 
+/**
+ * 7: Signals SIGINT & SIGTSTP
+ */
+void handle_SIGINT(int signo)
+{
+  char *message = "Caught SIGINT, sleeping for 10 seconds\n";
+  write(STDOUT_FILENO, message, 34);
+}
 
+void handle_SIGTSTP(int signo)
+{
+  if (foregroundOnlyMode == 0)
+  {
+    char *message = "Entering foreground-only mode\n";
+    write(STDOUT_FILENO, message, 30);
+    foregroundOnlyMode = 1;
+  }
+  else
+  {
+    char *message = "Exiting foreground-only mode\n";
+    write(STDOUT_FILENO, message, 29);
+    foregroundOnlyMode = 0;
+  }
+
+  fflush(stdout);
+}
 
 
 /**

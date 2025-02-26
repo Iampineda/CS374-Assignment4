@@ -314,7 +314,7 @@ void checkBackgroundProcesses()
     { // Background process has finished
       if (WIFEXITED(childStatus))
       {
-        printf("Background process %d terminated. Exit status: %d\n",
+        printf("Background process %d done. Exit value: %d\n",
                bgPid, WEXITSTATUS(childStatus));
       }
       else if (WIFSIGNALED(childStatus))

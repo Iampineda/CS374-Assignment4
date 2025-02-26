@@ -284,10 +284,11 @@ void checkBackgroundProcesses() {
   }
 }
 
+
 /**
  * 4: Execute Other Commands with Input/Output Redirection 
  */
-void otherCommands(char *args[], char *inputFile, char *outputFile, int background) {
+int otherCommands(char *args[], char *inputFile, char *outputFile, int background) {
  
   pid_t spawnPid = fork();
   int childStatus;
@@ -296,32 +297,39 @@ void otherCommands(char *args[], char *inputFile, char *outputFile, int backgrou
 
       case -1:  // Fork failed
           perror("fork() failed!");
-          exit(1);
-          break;
+          return 0;  // Return 0 for failure
 
       case 0:  // Child process
 
-      redirectInputOutput(inputFile, outputFile, background);
+          redirectInputOutput(inputFile, outputFile, background);
 
           // Execute command using execvp()
           if (execvp(args[0], args) == -1) {
               perror(args[0]);  
-              lastExitStatus = 1;
-              exit(1);  
+              exit(1);  // Exit child process if execvp fails
           }
           break;
 
       default:  // Parent process
 
-        if (background) {  
-          runBackgroundProcess(spawnPid);
-        } else {  
-          runForegroundProcess(spawnPid);
-        }
+          if (background) {  
+              runBackgroundProcess(spawnPid);
+          } else {  
+              runForegroundProcess(spawnPid);
+          }
 
-      break;
+          // Check if foreground process exited successfully
+          waitpid(spawnPid, &childStatus, 0);
+          if (WIFEXITED(childStatus) && WEXITSTATUS(childStatus) == 0) {
+              return 1;  // Return 1 if the command executed successfully
+          } else {
+              return 0;  // Return 0 if the command failed
+          }
   }
+
+  return 0;  // Default return if execution fails
 }
+
 
 
 int main() {
@@ -345,9 +353,8 @@ int main() {
     // Handle built in commands 
     if(commands(args)) { continue; }
 
-
     // Handle other commands 
-    otherCommands(args, inputFile, outputFile, background); 
+    if(otherCommands(args, inputFile, outputFile, background)) { continue;} 
 
 
     // Current Fail checks

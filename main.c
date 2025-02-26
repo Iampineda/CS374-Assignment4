@@ -300,7 +300,6 @@ int otherCommands(char *args[], char *inputFile, char *outputFile, int backgroun
           return 0;  // Return 0 for failure
 
       case 0:  // Child process
-
           redirectInputOutput(inputFile, outputFile, background);
 
           // Execute command using execvp()
@@ -311,25 +310,23 @@ int otherCommands(char *args[], char *inputFile, char *outputFile, int backgroun
           break;
 
       default:  // Parent process
-
           if (background) {  
               runBackgroundProcess(spawnPid);
+              return 1;  // Background processes are assumed to start successfully
           } else {  
               runForegroundProcess(spawnPid);
-          }
 
-          // Check if foreground process exited successfully
-          waitpid(spawnPid, &childStatus, 0);
-          if (WIFEXITED(childStatus) && WEXITSTATUS(childStatus) == 0) {
-              return 1;  // Return 1 if the command executed successfully
-          } else {
-              return 0;  // Return 0 if the command failed
+              // Check if foreground process exited successfully
+              if (WIFEXITED(lastExitStatus) && WEXITSTATUS(lastExitStatus) == 0) {
+                  return 1;  // Return 1 if the command executed successfully
+              } else {
+                  return 0;  // Return 0 if the command failed
+              }
           }
   }
 
   return 0;  // Default return if execution fails
 }
-
 
 
 int main() {

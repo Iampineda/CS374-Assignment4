@@ -311,13 +311,16 @@ void checkBackgroundProcesses()
     { // Background process has finished
       if (WIFEXITED(childStatus))
       {
+
+        lastExitStatus = WEXITSTATUS(childStatus);
         printf("Background process %d done. Exit value: %d\n",
-               bgPid, WEXITSTATUS(childStatus));
+          bgPid, WEXITSTATUS(childStatus));
       }
       else if (WIFSIGNALED(childStatus))
       {
+        lastExitStatus = WEXITSTATUS(childStatus);
         printf("Background process %d terminated by signal %d\n",
-               bgPid, WTERMSIG(childStatus));
+          bgPid, WTERMSIG(childStatus));
       }
 
       fflush(stdout);
@@ -425,7 +428,6 @@ int main()
   sigfillset(&SIGTSTP_action.sa_mask);
   SIGTSTP_action.sa_flags = SA_RESTART;
 
-  // Intasll our signal handler
   sigaction(SIGTSTP, &SIGTSTP_action, NULL);
 
   // Set up SIGINT handling
@@ -435,7 +437,6 @@ int main()
   sigfillset(&SIGINT_action.sa_mask);
   SIGINT_action.sa_flags = 0;
 
-  // Install our signal handler
   sigaction(SIGINT, &SIGINT_action, NULL);
 
   char input[MAX_INPUT];

@@ -298,8 +298,9 @@ void runForegroundProcess(pid_t spawnPid)
   }
   else if (WIFSIGNALED(childStatus))
   {
-    lastExitStatus = WTERMSIG(childStatus);
-    printf("Terminated by signal %d \n ", lastExitStatus);
+    int termSignal = WTERMSIG(childStatus);
+    lastExitStatus = 128 + termSignal;
+    printf("Terminated by signal %d\n", termSignal);
     fflush(stdout);
   }
 }

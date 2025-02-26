@@ -355,8 +355,7 @@ int main() {
 
 
     // Current Fail checks
-    printf("%s: command not found\n", args[0]);  
-    fflush(stdout);
+
   
   }
 

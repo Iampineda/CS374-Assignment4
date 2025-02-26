@@ -194,43 +194,44 @@ int commands(char *args[])
 /**
  * 5: Input & Output Redirection
  */
- void handleInputRedirection(char *inputFile)
- {
-   if (inputFile)
-   {
-     int inpFD = open(inputFile, O_RDONLY); // Open file in read mode
-     if (inpFD == -1)
-     {
-       fprintf(stderr, "Error: cannot open %s for input file\n", inputFile);
-       fflush(stderr);
-       lastExitStatus = 1; 
-       return; 
-     }
- 
-     dup2(inpFD, STDIN_FILENO);
-     close(inpFD);
-   }
- }
- 
- void handleOutputRedirection(char *outputFile)
- {
-   if (outputFile)
-   {
-     int outFD = open(outputFile, O_WRONLY | O_CREAT | O_TRUNC, 0644); // Open file in write mode
-     if (outFD == -1)
-     {
-       fprintf(stderr, "Error: cannot open %s for output file \n", outputFile);
-       fflush(stderr);
-       lastExitStatus = 1; 
-       return; 
-     }
- 
-     dup2(outFD, STDOUT_FILENO);
-     dup2(outFD, STDERR_FILENO);
-     close(outFD);
-   }
- }
- 
+void handleInputRedirection(char *inputFile)
+{
+
+  if (inputFile)
+  {
+
+    int inpFD = open(inputFile, O_RDONLY); // Open file in read mode
+    if (inpFD == -1)
+    {
+      fprintf(stderr, "Error: cannot open %s for input file\n", inputFile);
+      fflush(stderr);
+      exit(1);
+    }
+
+    dup2(inpFD, STDIN_FILENO);
+    close(inpFD);
+  }
+}
+
+void handleOutputRedirection(char *outputFile)
+{
+
+  if (outputFile)
+  {
+
+    int outFD = open(outputFile, O_WRONLY | O_CREAT, O_TRUNC, 0644); // Open file in write mode
+    if (outFD == -1)
+    {
+      fprintf(stderr, "Error: cannot open %s for output file \n", outputFile);
+      fflush(stderr);
+      exit(1);
+    }
+
+    dup2(outFD, STDOUT_FILENO);
+    close(outFD);
+  }
+}
+
 
 /**
  * 6. Executing Commands in Foreground & Background

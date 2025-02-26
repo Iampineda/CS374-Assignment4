@@ -113,7 +113,7 @@ int commandPrompt(char *input, char *args[], char **inputFile, char **outputFile
   }
 
   args[*argc] = NULL; // Null-terminate argument list
-  return 0;           // Successfully parsed command
+  return 0;          
 }
 
 /**
@@ -172,20 +172,18 @@ int commands(char *args[])
   // STATUS Logic
   else if (strcmp(args[0], "status") == 0)
   {
-
-    if (WIFEXITED(lastExitStatus))
-    {
-      printf("exit value: %d\n", WEXITSTATUS(lastExitStatus));
-    }
-    else if (WIFSIGNALED(lastExitStatus))
-    {
-      printf("Terminated by signal: %d \n", WTERMSIG(lastExitStatus));
-    }
-
-    fflush(stdout);
-
-    return 1;
+      if (WIFEXITED(lastExitStatus))
+      {
+          printf("exit value %d\n", WEXITSTATUS(lastExitStatus));
+      }
+      else if (WIFSIGNALED(lastExitStatus))
+      {
+          printf("terminated by signal %d\n", WTERMSIG(lastExitStatus));
+      }
+      fflush(stdout);
+      return 1;
   }
+
 
   return 0;
 }
@@ -193,57 +191,62 @@ int commands(char *args[])
 /**
  * 5: Input & Output Redirection
  */
-void handleInputRedirection(char *inputFile)
+ void handleInputRedirection(char *inputFile)
 {
-
-  if (inputFile)
-  {
-
-    int inpFD = open(inputFile, O_RDONLY); // Open file in read mode
-    if (inpFD == -1)
+    if (inputFile)
     {
-      fprintf(stderr, "Error: cannot open %s for input file\n", inputFile);
-      fflush(stderr);
-      exit(1);
-    }
+        int inpFD = open(inputFile, O_RDONLY); // Open file in read mode
+        if (inpFD == -1)
+        {
+            perror("Error opening input file"); // Prints system error message
+            exit(1);
+        }
 
-    if (dup2(inpFD, STDIN_FILENO) == -1)
-    {
-      perror("dup2 (input)");
-      exit(1);
+        // Redirect stdin to input file
+        if (dup2(inpFD, STDIN_FILENO) == -1)
+        {
+            perror("dup2 (input)");
+            close(inpFD); // Close file before exiting
+            exit(1);
+        }
+
+        close(inpFD); // Close the file descriptor after redirecting
     }
-  }
 }
 
-void handleOutputRedirection(char *outputFile)
-{
-
-  if (outputFile)
-  {
-
-    int outFD = open(outputFile, O_WRONLY | O_CREAT, O_TRUNC, 0666); // Open file in write mode
-    if (outFD == -1)
-    {
-      fprintf(stderr, "Error: cannot open %s for output file \n", outputFile);
-      fflush(stderr);
-      exit(1);
-    }
-
-    if (dup2(outFD, STDOUT_FILENO) == -1)
-    {
-      perror("dup2 (output)");
-      exit(1);
-    }
-
-    if (dup2(outFD, STDERR_FILENO) == -1)
-    {
-      perror("dup2 (stderr)");
-      exit(1);
-    }
-
-    close(outFD);
-  }
-}
+ 
+ void handleOutputRedirection(char *outputFile)
+ {
+     if (outputFile)
+     {
+         int outFD = open(outputFile, O_WRONLY | O_CREAT | O_TRUNC, 0644); // Set correct permissions
+         if (outFD == -1)
+         {
+             perror("Error opening output file"); // Prints system error message
+             fflush(stderr);
+             exit(1);
+         }
+ 
+         // Redirect stdout to output file
+         if (dup2(outFD, STDOUT_FILENO) == -1)
+         {
+             perror("dup2 (output)");
+             close(outFD);
+             exit(1);
+         }
+ 
+         // Redirect stderr to output file (optional, keep if needed)
+         if (dup2(outFD, STDERR_FILENO) == -1)
+         {
+             perror("dup2 (stderr)");
+             close(outFD);
+             exit(1);
+         }
+ 
+         close(outFD); // Close file descriptor after redirecting
+     }
+ }
+ 
 
 /**
  * 6. Executing Commands in Foreground & Background
@@ -283,22 +286,23 @@ void redirectInputOutput(char *inputFile, char *outputFile, int background)
 
 void runForegroundProcess(pid_t spawnPid)
 {
+    int childStatus;
+    waitpid(spawnPid, &childStatus, 0);
 
-  int childStatus;
-  waitpid(spawnPid, &childStatus, 0);
-
-  // Store exit status of foreground process
-  if (WIFEXITED(childStatus))
-  {
-    lastExitStatus = WEXITSTATUS(childStatus);
-  }
-  else if (WIFSIGNALED(childStatus))
-  {
-    lastExitStatus = WTERMSIG(childStatus);
-    printf("Terminated by signal %d /n ", lastExitStatus);
-    fflush(stdout);
-  }
+    // Fix: Store exit code properly
+    if (WIFEXITED(childStatus))
+    {
+        lastExitStatus = childStatus;  // Store full status
+    }
+    else if (WIFSIGNALED(childStatus))
+    {
+        lastExitStatus = childStatus; // Store full status
+        printf("terminated by signal %d\n", WTERMSIG(childStatus));
+        fflush(stdout);
+    }
 }
+
+
 
 void runBackgroundProcess(pid_t spawnPid)
 {
@@ -311,39 +315,37 @@ void runBackgroundProcess(pid_t spawnPid)
 
 void checkBackgroundProcesses()
 {
+    int childStatus;
+    int newCount = 0;
 
-  int childStatus;
-  int newCount = 0;
-
-  for (int i = 0; i < backgroundCount; i++)
-  {
-    pid_t bgPid = waitpid(backgroundPIDS[i], &childStatus, WNOHANG);
-
-    if (bgPid > 0)
-    { // Background process has finished
-      if (WIFEXITED(childStatus))
-      {
-        printf("Background process %d done. Exit value: %d\n",
-               bgPid, WEXITSTATUS(childStatus));
-      }
-      else if (WIFSIGNALED(childStatus))
-      {
-        printf("Background process %d terminated by signal %d\n",
-               bgPid, WTERMSIG(childStatus));
-      }
-
-      fflush(stdout);
-    }
-    else
+    for (int i = 0; i < backgroundCount; i++)
     {
-      // Keep the process in list if running still
-      backgroundPIDS[newCount++] = backgroundPIDS[i];
-    }
-  }
+        pid_t bgPid = waitpid(backgroundPIDS[i], &childStatus, WNOHANG);
 
-  // Update count to remove terminated processes
-  backgroundCount = newCount;
+        if (bgPid > 0)
+        { 
+            if (WIFEXITED(childStatus))
+            {
+                int exitStatus = WEXITSTATUS(childStatus);
+                printf("background process %d done. exit value: %d\n", bgPid, exitStatus);
+                fflush(stdout);
+            }
+            else if (WIFSIGNALED(childStatus))
+            {
+                int termSignal = WTERMSIG(childStatus);
+                printf("background process %d terminated by signal %d\n", bgPid, termSignal);
+                fflush(stdout);
+            }
+        }
+        else
+        {
+            backgroundPIDS[newCount++] = backgroundPIDS[i]; // Keep process in list if still running
+        }
+    }
+
+    backgroundCount = newCount; // Remove terminated processes
 }
+
 
 /**
  * 7: Signals SIGINT & SIGTSTP
@@ -358,14 +360,14 @@ void handle_SIGTSTP(int signo)
 {
   if (foregroundOnlyMode == 0)
   {
-    char *message = "Entering foreground-only mode\n";
-    write(STDOUT_FILENO, message, 30);
+    char *message = "\nEntering foreground-only mode (& is now ignored)\n";
+    write(STDOUT_FILENO, message, 50);
     foregroundOnlyMode = 1;
   }
   else
   {
-    char *message = "Exiting foreground-only mode\n";
-    write(STDOUT_FILENO, message, 29);
+    char *message = "\nExiting foreground-only mode\n";
+    write(STDOUT_FILENO, message, 30);
     foregroundOnlyMode = 0;
   }
 

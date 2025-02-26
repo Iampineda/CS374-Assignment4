@@ -14,8 +14,6 @@
 pid_t backgroundPIDS[MAX_BG_PROCS];
 int backgroundCount = 0; 
 int lastExitStatus = 0; 
-int lastBackgroundExitStatus = 0;
-
   
 
 /**
@@ -150,19 +148,12 @@ int commands(char *args[]) {
   // STATUS Logic 
   else if (strcmp(args[0], "status") == 0) {
 
-    if (lastExitStatus >= 0) {
-      printf("Exit status: %d \n", lastExitStatus);
-    } else {
-      printf("Terminated by signal: %d \n", -lastExitStatus);  
-    } 
+    if (WIFEXITED(lastExitStatus)) {
+        printf("Exit status: %d \n", WEXITSTATUS(lastExitStatus));
 
-    if (lastBackgroundExitStatus != 0) {  
-      if (lastBackgroundExitStatus > 0) {
-          printf("Last background process exit status: %d \n", lastBackgroundExitStatus);
-      } else {
-          printf("Last background process terminated by signal: %d \n", -lastBackgroundExitStatus);
-      }
-  }
+    } else if (WIFSIGNALED(lastExitStatus)) {
+        printf("Terminated by signal: %d \n", WTERMSIG(lastExitStatus));
+    }
 
     fflush(stdout); 
 
@@ -273,12 +264,10 @@ void checkBackgroundProcesses() {
       if (bgPid > 0) {  // Background process has finished
           if (WIFEXITED(childStatus)) {
 
-            lastBackgroundExitStatus = WEXITSTATUS(childStatus);  
-            printf("Background process %d terminated. Exit status: %d \n", bgPid, lastBackgroundExitStatus);
+              printf("Background process %d terminated. Exit status: %d \n", bgPid, WEXITSTATUS(childStatus));
           } 
           else if (WIFSIGNALED(childStatus)) {
-            lastBackgroundExitStatus = -WTERMSIG(childStatus);  
-            printf("Background process %d terminated by signal %d \n", bgPid, -lastBackgroundExitStatus);
+              printf("Background process %d terminated by signal %d \n", bgPid, WTERMSIG(childStatus));
           }
 
           fflush(stdout);

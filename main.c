@@ -112,7 +112,7 @@ int commandPrompt(char *input, char *args[], char **inputFile, char **outputFile
   }
 
   args[*argc] = NULL; // Null-terminate argument list
-  return 0; // Successfully parsed commands 
+  return 0;           // Successfully parsed command
 }
 
 
@@ -125,16 +125,6 @@ int commands(char *args[])
   if (args[0] == NULL)
   {
     return 0;
-  }
-
-  int i = 0; 
-  while(args[i] != NULL) 
-  {
-    if(strcmp(args[i], "&") == 0) {
-      args[i] = NULL; 
-      break;
-    }
-    i++; 
   }
 
   // EXIT Logic
@@ -192,7 +182,6 @@ int commands(char *args[])
       printf("Terminated by signal: %d \n", WTERMSIG(lastExitStatus));
     }
 
-    
     fflush(stdout);
 
     return 1;
@@ -216,7 +205,8 @@ void handleInputRedirection(char *inputFile)
     {
       fprintf(stderr, "Error: cannot open %s for input file\n", inputFile);
       fflush(stderr);
-      exit(1);
+      lastExitStatus = 1; 
+      return; 
     }
 
     dup2(inpFD, STDIN_FILENO);
@@ -235,14 +225,43 @@ void handleOutputRedirection(char *outputFile)
     {
       fprintf(stderr, "Error: cannot open %s for output file \n", outputFile);
       fflush(stderr);
-      exit(1);
+      lastExitStatus = 1; 
+      return; 
     }
 
     dup2(outFD, STDOUT_FILENO);
+    dup2(outFD, STDERR_FILENO);
     close(outFD);
   }
 }
 
+
+/**
+ * 7: Signals SIGINT & SIGTSTP
+ */
+ void handle_SIGINT(int signo)
+ {
+   char *message = "Caught SIGINT, sleeping for 10 seconds\n";
+   write(STDOUT_FILENO, message, 34);
+ }
+ 
+ void handle_SIGTSTP(int signo)
+ {
+   if (foregroundOnlyMode == 0)
+   {
+     char *message = "Entering foreground-only mode\n";
+     write(STDOUT_FILENO, message, 30);
+     foregroundOnlyMode = 1;
+   }
+   else
+   {
+     char *message = "Exiting foreground-only mode\n";
+     write(STDOUT_FILENO, message, 29);
+     foregroundOnlyMode = 0;
+   }
+ 
+   fflush(stdout);
+ }
 
 /**
  * 6. Executing Commands in Foreground & Background
@@ -310,12 +329,11 @@ void runBackgroundProcess(pid_t spawnPid)
 
 void checkBackgroundProcesses()
 {
-
   int childStatus;
   int newCount = 0;
 
   for (int i = 0; i < backgroundCount; i++)
-   {
+  {
     pid_t bgPid = waitpid(backgroundPIDS[i], &childStatus, WNOHANG);
 
     if (bgPid > 0)
@@ -348,93 +366,62 @@ void checkBackgroundProcesses()
 }
 
 
-/**
- * 7: Signals SIGINT & SIGTSTP
- */
-void handle_SIGINT(int signo)
-{
-  char *message = "Caught SIGINT, sleeping for 10 seconds\n";
-  write(STDOUT_FILENO, message, 34);
-}
 
-void handle_SIGTSTP(int signo)
-{
-  if (foregroundOnlyMode == 0)
-  {
-    char *message = "Entering foreground-only mode\n";
-    write(STDOUT_FILENO, message, 30);
-    foregroundOnlyMode = 1;
-  }
-  else
-  {
-    char *message = "Exiting foreground-only mode\n";
-    write(STDOUT_FILENO, message, 29);
-    foregroundOnlyMode = 0;
-  }
-
-  fflush(stdout);
-}
 
 
 /**
- * 4: Execute Other Commands 
+ * 4: Execute Other Commands with Input/Output Redirection
  */
- int otherCommands(char *args[], char *inputFile, char *outputFile, int background)
- {
-     pid_t spawnPid = fork();
-     int childStatus;  // Store status of child process
- 
-     switch (spawnPid)
-     {
-     case -1: // Fork failed
-         perror("fork() failed!");
-         return 0; // Return 0 for failure
- 
-     case 0: // Child process
-         signal(SIGINT, SIG_DFL);
-         redirectInputOutput(inputFile, outputFile, background);
- 
-         // Execute command using execvp()
-         if (execvp(args[0], args) == -1)
-         {
-             perror(args[0]); 
-             exit(1); // Exit child process if execvp fails
-         }
-         break;
- 
-     default: // Parent process
-         signal(SIGINT, SIG_IGN);
- 
-         if (background)
-         {
-             runBackgroundProcess(spawnPid);
-             return 1; // Background processes assumed to start successfully
-         }
-         else
-         {
-             waitpid(spawnPid, &childStatus, 0); // Wait for foreground process
- 
-             if (WIFEXITED(childStatus))
-             {
-                 lastExitStatus = WEXITSTATUS(childStatus);
-             }
-             else if (WIFSIGNALED(childStatus))
-             {
-                 lastExitStatus = WTERMSIG(childStatus);
-             }
-             else
-             {
-                 lastExitStatus = 1; // Generic error if neither condition is met
-             }
- 
-             return (lastExitStatus == 0) ? 1 : 0;
-         }
-     }
- 
-     return 0; // Default return if execution fails
- }
- 
- 
+int otherCommands(char *args[], char *inputFile, char *outputFile, int background)
+{
+
+  pid_t spawnPid = fork();
+  int childStatus;
+
+  switch (spawnPid)
+  {
+
+  case -1: // Fork failed
+    perror("fork() failed!");
+    return 0; // Return 0 for failure
+
+  case 0: // Child process
+    signal(SIGINT, SIG_DFL);
+    redirectInputOutput(inputFile, outputFile, background);
+
+    // Execute command using execvp()
+    if (execvp(args[0], args) == -1)
+    {
+      perror(args[0]);
+      exit(1); // Exit child process if execvp fails
+    }
+    break;
+
+  default: // Parent process
+    signal(SIGINT, SIG_IGN);
+    if (background)
+    {
+      runBackgroundProcess(spawnPid);
+      return 1; // Background processes are assumed to start successfully
+    }
+    else
+    {
+      runForegroundProcess(spawnPid);
+
+      // Check if foreground process exited successfully
+      if (WIFEXITED(lastExitStatus) && WEXITSTATUS(lastExitStatus) == 0)
+      {
+        return 1; // Return 1 if the command executed successfully
+      }
+      else
+      {
+        return 0; // Return 0 if the command failed
+      }
+    }
+  }
+
+  return 0; // Default return if execution fails
+}
 
 int main()
 {

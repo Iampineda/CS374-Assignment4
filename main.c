@@ -228,6 +228,7 @@ void handleOutputRedirection(char *outputFile)
     }
 
     dup2(outFD, STDOUT_FILENO);
+    dup2(outFD, STDERR_FILENO);
     close(outFD);
   }
 }

@@ -88,17 +88,11 @@ int commandPrompt(char *input, char *args[], char **inputFile, char **outputFile
       token = strtok(NULL, " ");
       if (token != NULL)
       {
-        printf("Error: `&` must be the last word in the command.\n");
-        return 1;
+        args[(*argc)++] = "&";
       }
 
-      if (foregroundOnlyMode == 1)
-      {
-        *background = 0;
-      }
-      else
-      {
-        *background = 1;
+      else {
+        *background = (foregroundOnlyMode == 1) ? 0 : 1; 
       }
     }
     else
@@ -120,6 +114,7 @@ int commandPrompt(char *input, char *args[], char **inputFile, char **outputFile
   args[*argc] = NULL; // Null-terminate argument list
   return 0;           // Successfully parsed command
 }
+
 
 /**
  * 3:  Built in Commands
@@ -195,6 +190,7 @@ int commands(char *args[])
   return 0;
 }
 
+
 /**
  * 5: Input & Output Redirection
  */
@@ -235,6 +231,7 @@ void handleOutputRedirection(char *outputFile)
     close(outFD);
   }
 }
+
 
 /**
  * 6. Executing Commands in Foreground & Background
@@ -336,6 +333,7 @@ void checkBackgroundProcesses()
   backgroundCount = newCount;
 }
 
+
 /**
  * 7: Signals SIGINT & SIGTSTP
  */
@@ -362,6 +360,7 @@ void handle_SIGTSTP(int signo)
 
   fflush(stdout);
 }
+
 
 /**
  * 4: Execute Other Commands with Input/Output Redirection
@@ -454,23 +453,14 @@ int main()
     checkBackgroundProcesses();
 
     // Handle Inputs
-    if (commandPrompt(input, args, &inputFile, &outputFile, &background, &argc))
-    {
-      continue;
-    }
+    if (commandPrompt(input, args, &inputFile, &outputFile, &background, &argc)) { continue;}
 
     // Handle built in commands
-    if (commands(args))
-    {
-      continue;
-    }
+    if (commands(args)) { continue; }
 
     // Handle other commands
-    if (otherCommands(args, inputFile, outputFile, background))
-    {
-      continue;
-    }
+    if (otherCommands(args, inputFile, outputFile, background)) { continue; }
   }
-
+  
   return 0;
 }

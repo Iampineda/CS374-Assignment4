@@ -205,12 +205,14 @@ void handleInputRedirection(char *inputFile)
     {
       fprintf(stderr, "Error: cannot open %s for input file\n", inputFile);
       fflush(stderr);
-      lastExitStatus = 1; 
       exit(1);
     }
 
-    dup2(inpFD, STDIN_FILENO);
-    close(inpFD);
+    if (dup2(inpFD, STDIN_FILENO) == -1)
+    {
+      perror("dup2 (input)");
+      exit(1);
+    }
   }
 }
 
@@ -225,12 +227,21 @@ void handleOutputRedirection(char *outputFile)
     {
       fprintf(stderr, "Error: cannot open %s for output file \n", outputFile);
       fflush(stderr);
-      lastExitStatus = 1; 
       exit(1);
     }
 
-    dup2(outFD, STDOUT_FILENO);
-    dup2(outFD, STDERR_FILENO);
+    if (dup2(outFD, STDOUT_FILENO) == -1)
+    {
+      perror("dup2 (output)");
+      exit(1);
+    }
+    
+    if (dup2(outFD, STDERR_FILENO) == -1)
+    {
+      perror("dup2 (stderr)");
+      exit(1);
+    }
+
     close(outFD);
   }
 }

@@ -304,35 +304,36 @@ void checkBackgroundProcesses()
 {
 
   int childStatus;
+  int newCount = 0;
+
   for (int i = 0; i < backgroundCount; i++)
   {
-
     pid_t bgPid = waitpid(backgroundPIDS[i], &childStatus, WNOHANG);
 
     if (bgPid > 0)
     { // Background process has finished
       if (WIFEXITED(childStatus))
       {
-
-        printf("Background process %d terminated. Exit status: %d \n", bgPid, WEXITSTATUS(childStatus));
+        printf("Background process %d terminated. Exit status: %d\n",
+               bgPid, WEXITSTATUS(childStatus));
       }
       else if (WIFSIGNALED(childStatus))
       {
-        printf("Background process %d terminated by signal %d \n", bgPid, WTERMSIG(childStatus));
+        printf("Background process %d terminated by signal %d\n",
+               bgPid, WTERMSIG(childStatus));
       }
 
       fflush(stdout);
-
-      // Remove the finished process from the list
-      for (int j = i; j < backgroundCount - 1; j++)
-      {
-        backgroundPIDS[j] = backgroundPIDS[j + 1];
-      }
-
-      backgroundCount--;
-      i--;
+    }
+    else
+    {
+      // Keep the process in list if running still
+      backgroundPIDS[newCount++] = backgroundPIDS[i];
     }
   }
+
+  // Update count to remove terminated processes
+  backgroundCount = newCount;
 }
 
 /**
@@ -359,7 +360,7 @@ void handle_SIGTSTP(int signo)
     foregroundOnlyMode = 0;
   }
 
-  fflush(stdout); 
+  fflush(stdout);
 }
 
 /**
@@ -427,7 +428,6 @@ int main()
 
   // Intasll our signal handler
   sigaction(SIGTSTP, &SIGTSTP_action, NULL);
-
 
   // Set up SIGINT handling
   struct sigaction SIGINT_action = {0};

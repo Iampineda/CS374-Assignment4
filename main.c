@@ -14,6 +14,7 @@
 pid_t backgroundPIDS[MAX_BG_PROCS];
 int backgroundCount = 0;
 int lastExitStatus = 0;
+int foregroundOnlyMode = 0;
 
 /**
  * 1-2: Command Prompt
@@ -90,7 +91,15 @@ int commandPrompt(char *input, char *args[], char **inputFile, char **outputFile
         printf("Error: `&` must be the last word in the command.\n");
         return 1;
       }
-      *background = 1;
+
+      if (foregroundOnlyMode == 1)
+      {
+        *background = 0;
+      }
+      else
+      {
+        *background = 1;
+      }
     }
     else
     { // Normal argument
@@ -277,6 +286,8 @@ void runForegroundProcess(pid_t spawnPid)
   else if (WIFSIGNALED(childStatus))
   {
     lastExitStatus = WTERMSIG(childStatus);
+    printf("Terminated by signal %d /n ", lastExitStatus);
+    fflush(stdout);
   }
 }
 
@@ -331,6 +342,22 @@ void handle_SIGINT(int signo)
 {
   char *message = "Caught SIGINT, sleeping for 10 seconds\n";
   write(STDOUT_FILENO, message, 34);
+}
+
+void handle_SIGTSTP(int signo)
+{
+  if (foregroundOnlyMode == 0)
+  {
+    char *message = "Entering foreground-only mode\n";
+    write(STDOUT_FILENO, message, 30);
+    foregroundOnlyMode = 1;
+  }
+  else
+  {
+    char *message = "Exiting foreground-only mode\n";
+    write(STDOUT_FILENO, message, 29);
+    foregroundOnlyMode = 0;
+  }
 }
 
 /**
@@ -389,6 +416,14 @@ int otherCommands(char *args[], char *inputFile, char *outputFile, int backgroun
 
 int main()
 {
+
+  // Set up SIGTSTP handling
+  struct sigaction SIGTSTP_action = {0};
+  SIGTSTP_action.sa_handler = handle_SIGTSTP;
+  sigfillset(&SIGTSTP_action.sa_mask);
+
+  // Intasll our signal handler
+  sigaction(SIGTSTP, &SIGTSTP_action, NULL);
 
   // Set up SIGINT handling
   struct sigaction SIGINT_action = {0};

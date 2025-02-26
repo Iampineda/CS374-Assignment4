@@ -325,14 +325,11 @@ void checkBackgroundProcesses()
     { // Background process has finished
       if (WIFEXITED(childStatus))
       {
-
-        lastExitStatus = WEXITSTATUS(childStatus);
         printf("Background process %d done. Exit value: %d\n",
           bgPid, WEXITSTATUS(childStatus));
       }
       else if (WIFSIGNALED(childStatus))
       {
-        lastExitStatus = WEXITSTATUS(childStatus);
         printf("Background process %d terminated by signal %d\n",
           bgPid, WTERMSIG(childStatus));
       }
@@ -349,6 +346,7 @@ void checkBackgroundProcesses()
   // Update count to remove terminated processes
   backgroundCount = newCount;
 }
+
 
 
 /**
@@ -465,7 +463,7 @@ int main()
   {
 
     // Background process management
-    // checkBackgroundProcesses();
+    checkBackgroundProcesses();
 
     // Handle Inputs
     if (commandPrompt(input, args, &inputFile, &outputFile, &background, &argc)) { continue;}

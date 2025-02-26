@@ -358,6 +358,8 @@ void handle_SIGTSTP(int signo)
     write(STDOUT_FILENO, message, 29);
     foregroundOnlyMode = 0;
   }
+
+  fflush(stdout); 
 }
 
 /**
@@ -421,9 +423,11 @@ int main()
   struct sigaction SIGTSTP_action = {0};
   SIGTSTP_action.sa_handler = handle_SIGTSTP;
   sigfillset(&SIGTSTP_action.sa_mask);
+  SIGTSTP_action.sa_flags = SA_RESTART;
 
   // Intasll our signal handler
   sigaction(SIGTSTP, &SIGTSTP_action, NULL);
+
 
   // Set up SIGINT handling
   struct sigaction SIGINT_action = {0};

@@ -465,7 +465,7 @@ int main()
   {
 
     // Background process management
-    checkBackgroundProcesses();
+    // checkBackgroundProcesses();
 
     // Handle Inputs
     if (commandPrompt(input, args, &inputFile, &outputFile, &background, &argc)) { continue;}

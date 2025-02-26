@@ -205,6 +205,7 @@ void handleInputRedirection(char *inputFile)
     {
       fprintf(stderr, "Error: cannot open %s for input file\n", inputFile);
       fflush(stderr);
+      lastExitStatus = 1; 
       exit(1);
     }
 
@@ -224,6 +225,7 @@ void handleOutputRedirection(char *outputFile)
     {
       fprintf(stderr, "Error: cannot open %s for output file \n", outputFile);
       fflush(stderr);
+      lastExitStatus = 1; 
       exit(1);
     }
 

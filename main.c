@@ -112,7 +112,7 @@ int commandPrompt(char *input, char *args[], char **inputFile, char **outputFile
   }
 
   args[*argc] = NULL; // Null-terminate argument list
-  return 0;           // Successfully parsed command
+  return 0; // Successfully parsed commands 
 }
 
 
@@ -125,6 +125,17 @@ int commands(char *args[])
   if (args[0] == NULL)
   {
     return 0;
+  }
+
+
+  int i = 0; 
+  while(args[i] != NULL) 
+  {
+    if(strcmp(args[i], "&") == 0) {
+      args[i] = NULL; 
+      break;
+    }
+    i++; 
   }
 
   // EXIT Logic
@@ -181,6 +192,11 @@ int commands(char *args[])
     {
       printf("Terminated by signal: %d \n", WTERMSIG(lastExitStatus));
     }
+    else
+    {
+      printf("Exit status: 0 \n");
+    }
+    
 
     fflush(stdout);
 
@@ -304,7 +320,7 @@ void checkBackgroundProcesses()
   int newCount = 0;
 
   for (int i = 0; i < backgroundCount; i++)
-  {
+   {
     pid_t bgPid = waitpid(backgroundPIDS[i], &childStatus, WNOHANG);
 
     if (bgPid > 0)

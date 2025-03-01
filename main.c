@@ -195,10 +195,10 @@ int commands(char *args[])
 {
     if (inputFile)
     {
-        int inpFD = open(inputFile, O_RDONLY); // Open file in read mode
+        int inpFD = open(inputFile, O_RDONLY); 
         if (inpFD == -1)
         {
-            perror("Error opening input file"); // Prints system error message
+            perror("Error opening input file"); 
             exit(1);
         }
 
@@ -206,11 +206,11 @@ int commands(char *args[])
         if (dup2(inpFD, STDIN_FILENO) == -1)
         {
             perror("dup2 (input)");
-            close(inpFD); // Close file before exiting
+            close(inpFD); 
             exit(1);
         }
 
-        close(inpFD); // Close the file descriptor after redirecting
+        close(inpFD); 
     }
 }
 
@@ -219,10 +219,10 @@ int commands(char *args[])
  {
      if (outputFile)
      {
-         int outFD = open(outputFile, O_WRONLY | O_CREAT | O_TRUNC, 0644); // Set correct permissions
+         int outFD = open(outputFile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
          if (outFD == -1)
          {
-             perror("Error opening output file"); // Prints system error message
+             perror("Error opening output file"); 
              fflush(stderr);
              exit(1);
          }
@@ -243,7 +243,7 @@ int commands(char *args[])
              exit(1);
          }
  
-         close(outFD); // Close file descriptor after redirecting
+         close(outFD); 
      }
  }
  
@@ -292,11 +292,11 @@ void runForegroundProcess(pid_t spawnPid)
     // Fix: Store exit code properly
     if (WIFEXITED(childStatus))
     {
-        lastExitStatus = childStatus;  // Store full status
+        lastExitStatus = childStatus;  
     }
     else if (WIFSIGNALED(childStatus))
     {
-        lastExitStatus = childStatus; // Store full status
+        lastExitStatus = childStatus; 
         printf("terminated by signal %d\n", WTERMSIG(childStatus));
         fflush(stdout);
     }
@@ -339,7 +339,7 @@ void checkBackgroundProcesses()
         }
         else
         {
-            backgroundPIDS[newCount++] = backgroundPIDS[i]; // Keep process in list if still running
+            backgroundPIDS[newCount++] = backgroundPIDS[i]; 
         }
     }
 
@@ -388,7 +388,7 @@ int otherCommands(char *args[], char *inputFile, char *outputFile, int backgroun
 
   case -1: // Fork failed
     perror("fork() failed!");
-    return 0; // Return 0 for failure
+    return 0; 
 
   case 0: // Child process
     signal(SIGINT, SIG_DFL);
@@ -407,25 +407,25 @@ int otherCommands(char *args[], char *inputFile, char *outputFile, int backgroun
     if (background)
     {
       runBackgroundProcess(spawnPid);
-      return 1; // Background processes are assumed to start successfully
+      return 1; // Assumse background success
     }
     else
     {
       runForegroundProcess(spawnPid);
 
-      // Check if foreground process exited successfully
+      // Check if foreground exited successfully
       if (WIFEXITED(lastExitStatus) && WEXITSTATUS(lastExitStatus) == 0)
       {
-        return 1; // Return 1 if the command executed successfully
+        return 1; 
       }
       else
       {
-        return 0; // Return 0 if the command failed
+        return 0; 
       }
     }
   }
 
-  return 0; // Default return if execution fails
+  return 0; // Failed execution 
 }
 
 int main()
